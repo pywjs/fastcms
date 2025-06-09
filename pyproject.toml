@@ -1,7 +1,18 @@
+[build-system]
+requires = ["flit_core >=3.11,<4"]
+build-backend = "flit_core.buildapi"
+
 [project]
 name = "fastcms"
-version = "0.1.0"
-description = "Add your description here"
+authors = [{name = "Azat (@azataiot)", email = "8280770+azataiot@users.noreply.github.com "}]
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+dynamic = ["version", "description"]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115.12",
+]
+
+[project.urls]
+Home = "https://azgh.cc/fastcms/"

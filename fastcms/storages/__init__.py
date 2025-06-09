@@ -1,0 +1,1 @@
+# fastcms/storages/__init__.py

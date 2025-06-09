@@ -1,0 +1,1 @@
+# fastcms/schemas/__init__.py
