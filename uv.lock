@@ -149,12 +149,8 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "pydantic" },
-    { name = "sqlmodel" },
-]
-
-[package.optional-dependencies]
-ulid = [
     { name = "python-ulid", extra = ["pydantic"] },
+    { name = "sqlmodel" },
 ]
 
 [package.dev-dependencies]
@@ -171,10 +167,9 @@ test = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "pydantic", specifier = ">=2.11.5" },
-    { name = "python-ulid", extras = ["pydantic"], marker = "extra == 'ulid'", specifier = ">=3.0.0" },
+    { name = "python-ulid", extras = ["pydantic"], specifier = ">=3.0.0" },
     { name = "sqlmodel", specifier = ">=0.0.24" },
 ]
-provides-extras = ["ulid"]
 
 [package.metadata.requires-dev]
 docs = [
