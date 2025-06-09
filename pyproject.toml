@@ -16,3 +16,9 @@ dependencies = [
 
 [project.urls]
 Home = "https://azgh.cc/fastcms/"
+
+[dependency-groups]
+test = [
+    "pytest>=8.4.0",
+    "pytest-cov>=6.1.1",
+]
