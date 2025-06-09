@@ -12,10 +12,17 @@ dynamic = ["version", "description"]
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115.12",
+    "pydantic>=2.11.5",
+    "sqlmodel>=0.0.24",
 ]
 
 [project.urls]
 Home = "https://azgh.cc/fastcms/"
+
+[project.optional-dependencies]
+ulid = [
+    "python-ulid[pydantic]>=3.0.0",
+]
 
 [dependency-groups]
 docs = [
