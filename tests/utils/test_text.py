@@ -1,6 +1,6 @@
 # tests/utils/test_text.py
 
-from fastcms.utils.text import slugify
+from fastcms.utils import slugify
 
 def test_slugify():
     # Basic test
