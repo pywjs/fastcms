@@ -9,7 +9,7 @@ def get_pyproject_version(file: Path) -> str:
     """
     Reads the version from the pyproject.toml file.
 
-    :param base_dir: The base directory where the pyproject.toml file is located.
+    :param file: The path to the pyproject.toml file.
     :return: The version string from the pyproject.toml file.
     """
     with open(file, "rb") as f:

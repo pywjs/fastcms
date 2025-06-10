@@ -4,6 +4,16 @@ from datetime import datetime
 from fastcms.utils import current_time
 from ulid import ULID
 
+"""
+A collection of mixins for SQLModel models in FastCMS.
+
+A mixin is a class that:
+
+- Is not mean to stand on its own
+- Adds specific behavior or fields (methods, properties, etc.) to a base model or another mixin
+- Is used via multiple inheritance to extend the functionality of a base model
+"""
+
 
 class ULIDPrimaryKeyMixin:
     """Mixin for models with ULID primary keys.
