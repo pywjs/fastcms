@@ -3,6 +3,7 @@
 from passlib.context import CryptContext
 from enum import StrEnum
 import string
+import random
 
 
 class UnSupportedHashingSchemeError(Exception):
@@ -79,6 +80,5 @@ def get_random_string(
     :param length: Length of the random string to generate.
     :return: Random string.
     """
-    import secrets
 
-    return "".join(secrets.choice(allowed_chars) for _ in range(length))
+    return "".join(random.SystemRandom().choice(allowed_chars) for _ in range(length))
