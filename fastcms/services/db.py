@@ -31,11 +31,11 @@ class BaseDBService(Generic[T]):
     # Handle soft delete
     def _soft_delete_clause(self) -> Any:
         """Builds a SQLAlchemy filter expression that enforces the soft delete awareness of the model."""
+        from sqlalchemy import true, false
+
         if self.delete_mode == DeleteMode.SOFT and hasattr(self.model, "is_deleted"):
             # this creates an SQL clause equivalent to: "WHERE is_deleted = FALSE"
-            return not getattr(self.model, "is_deleted")
-        from sqlalchemy import true
-
+            return getattr(self.model, "is_deleted") == false()
         return true()
 
     def _filter_clause(self, **kwargs):
