@@ -7,7 +7,7 @@ from sqlmodel import SQLModel, select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from fastcms.utils.time import current_time
 from fastcms.utils.db import parse_filters
-
+from sqlalchemy.inspection import inspect
 
 T = TypeVar("T", bound=SQLModel)
 
@@ -28,6 +28,14 @@ class BaseDBService(Generic[T]):
         self.model = model
         self.delete_mode = delete_mode
 
+        # Computed properties for the model
+        self.model_mapper = inspect(model)
+        self.model_columns = {col.key for col in self.model_mapper.columns}
+        self.model_relationships = {
+            rel.key: rel for rel in self.model_mapper.relationships
+        }
+        self.model_fields = set(self.model.model_fields.keys())
+
     # Handle soft delete
     def _soft_delete_clause(self) -> Any:
         """Builds a SQLAlchemy filter expression that enforces the soft delete awareness of the model."""
@@ -43,11 +51,10 @@ class BaseDBService(Generic[T]):
             from sqlalchemy import true
 
             return true()
-        valid_fields = set(self.model.model_fields.keys())
         fields_dict = {}
         for k, v in kwargs.items():
             filed = k.split("__", 1)[0]
-            if filed not in valid_fields:
+            if filed not in self.model_fields:
                 raise ValueError(
                     f"Invalid field '{filed}' for model '{self.model.__name__}'"
                 )
@@ -122,9 +129,24 @@ class BaseDBService(Generic[T]):
         result = await self.session.exec(stmt)
         return result.all()
 
-    async def dict_to_instance(self, data: dict[str, Any]) -> T:
-        """Convert a dictionary to an instance of the model."""
-        return self.model(**data)
+    async def _build_instance_from_data(self, data: dict[str, Any]) -> T:
+        """Recursively convert a dict with nested relations into a SQLModel instance."""
+        instance_data = {}
+
+        for key, value in data.items():
+            if key in self.model_columns:
+                instance_data[key] = value
+            elif key in self.model_relationships:
+                related_model = self.model_relationships[key].mapper.class_
+                if isinstance(value, list):
+                    instance_data[key] = [
+                        related_model(**v) if isinstance(v, dict) else v for v in value
+                    ]
+                elif isinstance(value, dict):
+                    instance_data[key] = related_model(**value)
+                else:
+                    instance_data[key] = value
+        return self.model(**instance_data)
 
     async def _create(self, instance: T) -> T:
         """Create a new instance."""
@@ -140,8 +162,8 @@ class BaseDBService(Generic[T]):
         return instance
 
     async def create(self, data: dict[str, Any]) -> T:
-        """Create a new instance from a dictionary."""
-        instance = await self.dict_to_instance(data)
+        """Create a new instance from a dictionary, supporting nested relationships."""
+        instance = await self._build_instance_from_data(data)
         return await self._create(instance)
 
     async def update(self, instance: T, data: dict[str, Any]) -> T:
