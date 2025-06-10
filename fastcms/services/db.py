@@ -105,7 +105,7 @@ class BaseDBService(Generic[T]):
     async def one(self, pk: str | None = None, **kwargs) -> T | None:
         """Retrieve a single instance by filters.
         If pk is provided, it will be used to filter the instance.
-        or can be more implicit such as `one(id=pk)` or `one(slug=slug)`.
+        Or can be more implicit such as `one(id=pk)` or `one(slug=slug)`.
         """
         filter_clause = self._filter_clause(**kwargs)
         if pk:
