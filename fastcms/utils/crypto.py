@@ -2,6 +2,7 @@
 
 from passlib.context import CryptContext
 from enum import StrEnum
+import string
 
 
 class UnSupportedHashingSchemeError(Exception):
@@ -67,3 +68,17 @@ class PasswordHasher:
 
     def needs_rehash(self, hashed_password: str) -> bool:
         return self.context.needs_update(hashed_password)
+
+
+def get_random_string(
+    length: int = 32, allowed_chars: str = string.ascii_letters + string.digits
+) -> str:
+    """
+    Generate a random string of fixed length.
+    :param allowed_chars: A string of characters to choose from.
+    :param length: Length of the random string to generate.
+    :return: Random string.
+    """
+    import secrets
+
+    return "".join(secrets.choice(allowed_chars) for _ in range(length))
