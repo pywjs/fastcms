@@ -102,17 +102,22 @@ class BaseDBService(Generic[T]):
         """
         return await self.session.get(self.model, pk)
 
-    async def one(self, pk: str, **kwargs) -> T | None:
-        """Retrieve a single instance by primary key with additional filters."""
+    async def one(self, pk: str | None = None, **kwargs) -> T | None:
+        """Retrieve a single instance by filters.
+        If pk is provided, it will be used to filter the instance.
+        or can be more implicit such as `one(id=pk)` or `one(slug=slug)`.
+        """
         filter_clause = self._filter_clause(**kwargs)
-        stmt = select(self.model).where(filter_clause)
+        if pk:
+            filter_clause = filter_clause & (self.model.id == pk)
+        stmt: Select = select(self.model).where(filter_clause)
         result = await self.session.exec(stmt)
         return result.one_or_none()
 
     async def all(self, **kwargs) -> Sequence[T] | None:
         """Retrieve all instances with optional filters."""
         filter_clause = self._filter_clause(**kwargs)
-        stmt = select(self.model).where(filter_clause)
+        stmt: Select = select(self.model).where(filter_clause)
         result = await self.session.exec(stmt)
         return result.all()
 
