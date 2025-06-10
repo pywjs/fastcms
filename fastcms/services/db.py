@@ -107,6 +107,7 @@ class BaseDBService(Generic[T]):
         If pk is provided, it will be used to filter the instance.
         Or can be more implicit such as `one(id=pk)` or `one(slug=slug)`.
         """
+        # TODO: when using `one`, it should raise an exception if more than one instance is found.
         filter_clause = self._filter_clause(**kwargs)
         if pk:
             filter_clause = filter_clause & (self.model.id == pk)
