@@ -7,23 +7,23 @@ class StorageError(Exception):
     pass
 
 
-class StorageNotFound(StorageError):
+class StorageNotFoundError(StorageError):
     pass
 
 
-class FileNotFound(StorageError):
+class StorageFileNotFoundError(StorageError):
     pass
 
 
-class FolderNotFound(StorageError):
+class StorageFolderNotFoundError(StorageError):
     pass
 
 
-class FileExists(StorageError):
+class StorageFileExistsError(StorageError):
     pass
 
 
-class FolderExists(StorageError):
+class StorageFolderExists(StorageError):
     pass
 
 
@@ -31,11 +31,11 @@ class StoragePermissionError(StorageError):
     pass
 
 
-class FolderPermissionError(StorageError):
+class StorageFolderPermissionError(StorageError):
     pass
 
 
-class FilePermissionError(StorageError):
+class StorageFilePermissionError(StorageError):
     pass
 
 
