@@ -5,7 +5,7 @@ from fastcms.utils.crypto import (
     HashingScheme,
     PasswordHasher,
     get_random_string,
-    UnSupportedHashingSchemeError,
+    UnsupportedHashingSchemeError,
 )
 
 
@@ -36,7 +36,7 @@ def test_get_random_string_allowed_chars():
 
 
 def test_unsupported_scheme_raises():
-    with pytest.raises(UnSupportedHashingSchemeError):
+    with pytest.raises(UnsupportedHashingSchemeError):
         PasswordHasher("unsupported")  # noqa
 
 

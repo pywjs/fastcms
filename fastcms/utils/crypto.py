@@ -6,9 +6,7 @@ import string
 import random
 
 
-class UnSupportedHashingSchemeError(Exception):
-    """Exception raised for unsupported hashing schemes."""
-
+class UnsupportedHashingSchemeError(Exception):
     pass
 
 
@@ -32,11 +30,11 @@ class PasswordHasher:
             try:
                 scheme = HashingScheme(scheme.lower())
             except ValueError:
-                raise UnSupportedHashingSchemeError(
+                raise UnsupportedHashingSchemeError(
                     f"Unsupported hashing scheme: {scheme}"
                 )
         if not HashingScheme.is_valid(scheme):
-            raise UnSupportedHashingSchemeError(f"Unsupported hashing scheme: {scheme}")
+            raise UnsupportedHashingSchemeError(f"Unsupported hashing scheme: {scheme}")
 
         # Loop through the schemes to set up the CryptContext
         if scheme == HashingScheme.ARGON2:
@@ -59,7 +57,7 @@ class PasswordHasher:
                 deprecated="auto",
             )
         else:
-            raise UnSupportedHashingSchemeError(f"Unsupported hashing scheme: {scheme}")
+            raise UnsupportedHashingSchemeError(f"Unsupported hashing scheme: {scheme}")
 
     def hash(self, password: str) -> str:
         return self.context.hash(password)
