@@ -11,6 +11,7 @@ license-files = ["LICENSE"]
 dynamic = ["version", "description"]
 requires-python = ">=3.13"
 dependencies = [
+    "aiofiles>=24.1.0",
     "fastapi>=0.115.12",
     "passlib[argon2,bcrypt]>=1.7.4",
     "pydantic>=2.11.5",
