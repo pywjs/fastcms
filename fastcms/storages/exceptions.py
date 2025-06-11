@@ -15,6 +15,10 @@ class StorageFileNotFoundError(StorageError):
     pass
 
 
+class StorageFileNotExistError(StorageError):
+    pass
+
+
 class StorageFolderNotFoundError(StorageError):
     pass
 

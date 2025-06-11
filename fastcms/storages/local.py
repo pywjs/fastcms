@@ -1,9 +1,13 @@
 # fastcms/storages/local.py
-
+import urllib
 from pathlib import Path
 from fastcms.storages.base import Storage
 from typing import Union
 import aiofiles
+
+from fastcms.storages.exceptions import (
+    StorageFileNotExistError,
+)
 
 
 class LocalStorage(Storage):
@@ -33,3 +37,24 @@ class LocalStorage(Storage):
         file_path = self._resolve_path(str(name))
         if file_path.exists():
             file_path.unlink()
+        raise StorageFileNotExistError
+
+    async def exists(self, name: str | Path) -> bool:
+        """Check if a file exists by its name."""
+        file_path = self._resolve_path(str(name))
+        return file_path.exists()
+
+    async def url(self, name: str | Path) -> str:
+        """Return a URL of a file."""
+        return urllib.parse.urljoin(self.base_url, str(name))
+
+    async def signed_url(self, name: str | Path, expires_seconds: int = 3600) -> str:
+        """For local storage, we can return the URL directly as signed URLs are not applicable."""
+        return await self.url(name)
+
+    async def size(self, name: str | Path) -> int:
+        """Return the size of the file in bytes."""
+        file_path = self._resolve_path(str(name))
+        if not file_path.exists():
+            raise StorageFileNotExistError(f"File '{name}' does not exist.")
+        return file_path.stat().st_size
