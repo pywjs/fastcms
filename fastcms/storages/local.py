@@ -30,14 +30,15 @@ class LocalStorage(Storage):
         # Write the content to the file asynchronously
         async with aiofiles.open(file_path, "wb") as f:
             await f.write(content)
-        return str(file_path)
+        return str(file_path.relative_to(self.base_path))
 
     async def delete(self, name: str | Path) -> None:
         """Delete a file by its name or path."""
         file_path = self._resolve_path(str(name))
         if file_path.exists():
             file_path.unlink()
-        raise StorageFileNotExistError
+        else:
+            raise StorageFileNotExistError
 
     async def exists(self, name: str | Path) -> bool:
         """Check if a file exists by its name."""
