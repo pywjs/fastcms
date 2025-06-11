@@ -1,10 +1,12 @@
 # fastcms/storages/s3.py
 
 import aioboto3
+from fastapi import UploadFile
 from pydantic import BaseModel, ConfigDict
 import mimetypes
 from fastcms.storages.base import Storage
 from fastcms.storages.exceptions import StorageFileNotExistError
+from io import BytesIO
 
 
 class S3Settings(BaseModel):
@@ -33,16 +35,24 @@ class S3Storage(Storage):
         if self.settings.region_name:
             self.s3_client_kwargs["region_name"] = self.settings.region_name
 
-    async def save(self, name: str, content: bytes) -> str:
+    async def save(self, name: str, content: bytes | UploadFile) -> str:
         """Save a file and return its name/path."""
         session = aioboto3.Session()
         _extra_args = {"ACL": "public-read"} if self.public else {}
         content_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
+
+        # If content is an UploadFile, read its content
+        if isinstance(content, UploadFile):
+            body = content.file
+        elif isinstance(content, bytes):
+            body = BytesIO(content)
+        else:
+            raise ValueError("Content must be bytes or an UploadFile instance.")
         async with session.client(**self.s3_client_kwargs) as s3:
             await s3.upload_fileobj(
                 Bucket=self.settings.bucket_name,
                 Key=name,
-                Body=content,
+                Body=body,
                 ExtraArgs={"ContentType": content_type, **_extra_args},
             )
         return name
