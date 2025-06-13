@@ -122,6 +122,11 @@ class BaseDBService(Generic[T]):
         if pk:
             filter_clause = filter_clause & (self.model.id == pk)
         stmt: Select = select(self.model).where(filter_clause)
+
+        # Apply soft delete clause if applicable
+        soft_delete_clause = self._soft_delete_clause()
+        stmt = stmt.where(soft_delete_clause)
+
         result = await self.session.exec(stmt)
         return result.one_or_none()
 
@@ -138,6 +143,11 @@ class BaseDBService(Generic[T]):
         """Retrieve all instances with optional filters."""
         filter_clause = self._filter_clause(**kwargs)
         stmt: Select = select(self.model).where(filter_clause)
+
+        # Apply soft delete clause if applicable
+        soft_delete_clause = self._soft_delete_clause()
+        stmt = stmt.where(soft_delete_clause)
+
         result = await self.session.exec(stmt)
         return result.all()
 
