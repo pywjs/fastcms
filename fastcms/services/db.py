@@ -187,8 +187,8 @@ class BaseDBService(Generic[T]):
             field = parse_table_field_from_error_msg(orig_msg)
             if field:
                 raise DBServiceIntegrityError(
-                    f"{field.capitalize()} already exists."
-                ) from e
+                    f"{field.capitalize()} already exists.", field=field
+                )
             else:
                 raise DBServiceIntegrityError(f"Integrity error: {orig_msg}") from e
         return instance
