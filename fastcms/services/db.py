@@ -8,6 +8,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from fastcms.utils.time import current_time
 from fastcms.utils.db import parse_filters
 from sqlalchemy.inspection import inspect
+from sqlalchemy.exc import IntegrityError
+from fastcms.services.exceptions import DBServiceIntegrityError
 
 T = TypeVar("T", bound=SQLModel)
 
@@ -174,9 +176,13 @@ class BaseDBService(Generic[T]):
         if hasattr(instance, "created_at"):
             instance.created_at = current_time()
 
-        self.session.add(instance)
-        await self.session.commit()
-        await self.session.refresh(instance)
+        try:
+            self.session.add(instance)
+            await self.session.commit()
+            await self.session.refresh(instance)
+        except IntegrityError as e:
+            await self.session.rollback()
+            raise DBServiceIntegrityError from e
         return instance
 
     async def create(self, data: dict[str, Any]) -> T:
