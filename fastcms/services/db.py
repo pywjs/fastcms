@@ -122,10 +122,28 @@ class BaseDBService(Generic[T]):
         result = await self.session.exec(stmt)
         return result.one_or_none()
 
+    async def one_by_stmt(self, stmt: Select) -> T | None:
+        """Retrieve a single instance by a custom SQLAlchemy statement."""
+        # Apply soft delete clause if applicable
+        soft_delete_clause = self._soft_delete_clause()
+        stmt = stmt.where(soft_delete_clause)
+
+        result = await self.session.exec(stmt)
+        return result.one_or_none()
+
     async def all(self, **kwargs) -> Sequence[T] | None:
         """Retrieve all instances with optional filters."""
         filter_clause = self._filter_clause(**kwargs)
         stmt: Select = select(self.model).where(filter_clause)
+        result = await self.session.exec(stmt)
+        return result.all()
+
+    async def all_by_stmt(self, stmt: Select) -> Sequence[T] | None:
+        """Retrieve all instances by a custom SQLAlchemy statement."""
+        # Apply soft delete clause if applicable
+        soft_delete_clause = self._soft_delete_clause()
+        stmt = stmt.where(soft_delete_clause)
+
         result = await self.session.exec(stmt)
         return result.all()
 
