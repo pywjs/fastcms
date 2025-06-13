@@ -10,4 +10,7 @@ class DBServiceError(Exception):
 class DBServiceIntegrityError(DBServiceError):
     """Exception raised for integrity errors in database operations."""
 
-    pass
+    def __init__(self, message: str, field: str | None = None):
+        super().__init__(message)
+        self.message = message
+        self.field = field

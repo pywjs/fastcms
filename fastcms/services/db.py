@@ -10,6 +10,7 @@ from fastcms.utils.db import parse_filters
 from sqlalchemy.inspection import inspect
 from sqlalchemy.exc import IntegrityError
 from fastcms.services.exceptions import DBServiceIntegrityError
+from fastcms.utils.db import parse_table_field_from_error_msg
 
 T = TypeVar("T", bound=SQLModel)
 
@@ -183,7 +184,13 @@ class BaseDBService(Generic[T]):
         except IntegrityError as e:
             await self.session.rollback()
             orig_msg = str(e.orig) if hasattr(e, "orig") else str(e)
-            raise DBServiceIntegrityError(f"Integrity error: {orig_msg}") from e
+            field = parse_table_field_from_error_msg(orig_msg)
+            if field:
+                raise DBServiceIntegrityError(
+                    f"{field.capitalize()} already exists."
+                ) from e
+            else:
+                raise DBServiceIntegrityError(f"Integrity error: {orig_msg}") from e
         return instance
 
     async def create(self, data: dict[str, Any]) -> T:

@@ -43,3 +43,14 @@ def parse_filters(model: type[SQLModel], filters: dict[str, Any]) -> ClauseEleme
                 expressions.append(OPERATORS[operator](column, value))
 
     return and_(*expressions) if expressions else true()
+
+
+def parse_table_field_from_error_msg(error_msg: str) -> str | None:
+    """
+    Parses the table name from an error message.
+    """
+    import re
+
+    """Extracts the field name from a PostgreSQL unique violation DETAIL message."""
+    match = re.search(r"Key \((.*?)\)=\(", error_msg)
+    return match.group(1) if match else None
