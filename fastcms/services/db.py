@@ -182,7 +182,8 @@ class BaseDBService(Generic[T]):
             await self.session.refresh(instance)
         except IntegrityError as e:
             await self.session.rollback()
-            raise DBServiceIntegrityError from e
+            orig_msg = str(e.orig) if hasattr(e, "orig") else str(e)
+            raise DBServiceIntegrityError(f"Integrity error: {orig_msg}") from e
         return instance
 
     async def create(self, data: dict[str, Any]) -> T:
