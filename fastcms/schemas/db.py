@@ -30,6 +30,12 @@ class BaseDBSchema:
         self._split_fields()  # Re-split after excluding
         return self
 
+    def append(self, fields: dict[str, type]) -> "BaseDBSchema":
+        """Append new fields to the schema."""
+        for key, typ in fields.items():
+            self._base_fields[key] = (typ, ...)
+        return self
+
     def override_types(self, overrides: dict[str, type]) -> "BaseDBSchema":
         """Override field types."""
         self._overrides.update(overrides)
