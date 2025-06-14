@@ -139,6 +139,13 @@ class BaseDBService(Generic[T]):
         result = await self.session.exec(stmt)
         return result.one_or_none()
 
+    async def one_by_slug(self, slug: str) -> T | None:
+        """Retrieve a single instance by slug."""
+        if not hasattr(self.model, "slug"):
+            raise ValueError(f"{self.model.__name__} does not have a slug field.")
+
+        return await self.one(slug=slug)
+
     async def all(self, **kwargs) -> Sequence[T] | None:
         """Retrieve all instances with optional filters."""
         filter_clause = self._filter_clause(**kwargs)
