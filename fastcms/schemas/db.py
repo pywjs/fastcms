@@ -8,6 +8,23 @@ T = TypeVar("T", bound=SQLModel)
 
 # Commonly used schema fields
 SOFT_DELETE_FIELDS = ["is_deleted", "deleted_at"]
+COMMON_FIELDS = [
+    "id",
+    "created_at",
+    "updated_at",
+    "is_deleted",
+    "deleted_at",
+]
+
+PUBLISHABLE_FIELDS = [
+    "is_published",
+    "published_at",
+    "unpublished_at",
+]
+
+SLUG_FIELDS = [
+    "slug",
+]
 
 
 class BaseDBSchema:
