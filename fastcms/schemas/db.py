@@ -7,7 +7,7 @@ from pydantic import create_model
 T = TypeVar("T", bound=SQLModel)
 
 # Commonly used schema fields
-SOFT_DELETE_FIELDS = ["deleted_at", "deleted_by"]
+SOFT_DELETE_FIELDS = ["is_deleted", "deleted_at"]
 
 
 class BaseDBSchema:
