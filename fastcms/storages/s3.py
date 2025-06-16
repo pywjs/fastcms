@@ -7,6 +7,7 @@ import mimetypes
 from fastcms.storages.base import Storage
 from fastcms.storages.exceptions import StorageFileNotExistError
 from io import BytesIO
+from posixpath import normpath
 
 
 class S3Settings(BaseModel):
@@ -23,8 +24,14 @@ class S3Settings(BaseModel):
 class S3Storage(Storage):
     name = "s3"
 
-    def __init__(self, settings: S3Settings, public: bool = False):
+    def __init__(
+        self, settings: S3Settings, public: bool = False, prefix: str | None = None
+    ):
         self.public = public
+        if prefix is not None:
+            self.prefix = prefix.rstrip("/")
+        else:
+            self.prefix = "public" if public else "private"
         self.settings = settings
         self.s3_client_kwargs = {
             "service_name": "s3",
@@ -35,12 +42,16 @@ class S3Storage(Storage):
         if self.settings.region_name:
             self.s3_client_kwargs["region_name"] = self.settings.region_name
 
+        # session
+        self.session = aioboto3.Session()
+
     async def save(self, name: str, content: bytes | UploadFile) -> str:
         """Save a file and return its name/path."""
-        session = aioboto3.Session()
         _extra_args = {"ACL": "public-read"} if self.public else {}
         content_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
-
+        # strip leading slashes from name just in case
+        name = name.lstrip("/")
+        full_key = normpath(f"{self.prefix}/{name}") if self.prefix else normpath(name)
         # If content is an UploadFile, read its content
         if isinstance(content, UploadFile):
             body = content.file
@@ -48,19 +59,18 @@ class S3Storage(Storage):
             body = BytesIO(content)
         else:
             raise ValueError("Content must be bytes or an UploadFile instance.")
-        async with session.client(**self.s3_client_kwargs) as s3:
+        async with self.session.client(**self.s3_client_kwargs) as s3:
             await s3.upload_fileobj(
                 Bucket=self.settings.bucket_name,
-                Key=name,
+                Key=full_key,
                 Body=body,
                 ExtraArgs={"ContentType": content_type, **_extra_args},
             )
-        return name
+        return full_key
 
     async def delete(self, name: str) -> None:
         """Delete a file by its name."""
-        session = aioboto3.Session()
-        async with session.client(**self.s3_client_kwargs) as s3:
+        async with self.session.client(**self.s3_client_kwargs) as s3:
             try:
                 await s3.delete_object(Bucket=self.settings.bucket_name, Key=name)
             except s3.exceptions.NoSuchKey:
@@ -68,8 +78,7 @@ class S3Storage(Storage):
 
     async def exists(self, name: str) -> bool:
         """Check if a file exists by its name."""
-        session = aioboto3.Session()
-        async with session.client(**self.s3_client_kwargs) as s3:
+        async with self.session.client(**self.s3_client_kwargs) as s3:
             try:
                 await s3.head_object(Bucket=self.settings.bucket_name, Key=name)
                 return True
@@ -84,8 +93,7 @@ class S3Storage(Storage):
 
     async def signed_url(self, name: str, expires_seconds: int = 3600) -> str:
         """Return a signed temporary URL."""
-        session = aioboto3.Session()
-        async with session.client(**self.s3_client_kwargs) as s3:
+        async with self.session.client(**self.s3_client_kwargs) as s3:
             return await s3.generate_presigned_url(
                 ClientMethod="get_object",
                 Params={"Bucket": self.settings.bucket_name, "Key": name},
@@ -94,8 +102,7 @@ class S3Storage(Storage):
 
     async def size(self, name: str) -> int:
         """Return the size of the file in bytes."""
-        session = aioboto3.Session()
-        async with session.client(**self.s3_client_kwargs) as s3:
+        async with self.session.client(**self.s3_client_kwargs) as s3:
             try:
                 response = await s3.head_object(
                     Bucket=self.settings.bucket_name, Key=name
