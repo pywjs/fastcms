@@ -25,7 +25,7 @@ class HashingScheme(StrEnum):
 
 
 class PasswordHasher:
-    def __init__(self, scheme: HashingScheme = HashingScheme.ARGON2):
+    def __init__(self, scheme: HashingScheme | str = HashingScheme.ARGON2):
         if isinstance(scheme, str):
             try:
                 scheme = HashingScheme(scheme.lower())

@@ -54,14 +54,14 @@ class JWTHandler:
     def __init__(
         self,
         secret: str,
-        algorithm: JWTAlgorithm = JWTAlgorithm.HS256,
+        algorithm: JWTAlgorithm | str = JWTAlgorithm.HS256,
         access_token_expire_minutes: int = 30,  # 30 minutes
         refresh_token_expire_minutes: int = 60 * 24 * 7,  # 7 days
     ):
         # Validate algorithm
         if isinstance(algorithm, str):
             try:
-                algorithm = JWTAlgorithm(algorithm.capitalize())
+                algorithm = JWTAlgorithm(algorithm)
             except ValueError:
                 raise UnsupportedJWTAlgorithmError(
                     f"Unsupported JWT algorithm: {algorithm}"
