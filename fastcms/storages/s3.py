@@ -45,13 +45,19 @@ class S3Storage(Storage):
         # session
         self.session = aioboto3.Session()
 
+    async def _full_key(self, name: str) -> str:
+        """Construct the full key for the S3 object."""
+        # strip leading slashes from name just in case
+        name = name.lstrip("/")
+        full_key = normpath(f"{self.prefix}/{name}") if self.prefix else normpath(name)
+        return full_key
+
     async def save(self, name: str, content: bytes | UploadFile) -> str:
         """Save a file and return its name/path."""
         _extra_args = {"ACL": "public-read"} if self.public else {}
         content_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
         # strip leading slashes from name just in case
-        name = name.lstrip("/")
-        full_key = normpath(f"{self.prefix}/{name}") if self.prefix else normpath(name)
+        full_key = await self._full_key(name)
         # If content is an UploadFile, read its content
         if isinstance(content, UploadFile):
             body = content.file
@@ -61,9 +67,9 @@ class S3Storage(Storage):
             raise ValueError("Content must be bytes or an UploadFile instance.")
         async with self.session.client(**self.s3_client_kwargs) as s3:
             await s3.upload_fileobj(
+                Fileobj=body,
                 Bucket=self.settings.bucket_name,
                 Key=full_key,
-                Body=body,
                 ExtraArgs={"ContentType": content_type, **_extra_args},
             )
         return full_key
@@ -72,7 +78,8 @@ class S3Storage(Storage):
         """Delete a file by its name."""
         async with self.session.client(**self.s3_client_kwargs) as s3:
             try:
-                await s3.delete_object(Bucket=self.settings.bucket_name, Key=name)
+                key = await self._full_key(name)
+                await s3.delete_object(Bucket=self.settings.bucket_name, Key=key)
             except s3.exceptions.NoSuchKey:
                 raise StorageFileNotExistError(f"File '{name}' does not exist.")
 
@@ -80,7 +87,8 @@ class S3Storage(Storage):
         """Check if a file exists by its name."""
         async with self.session.client(**self.s3_client_kwargs) as s3:
             try:
-                await s3.head_object(Bucket=self.settings.bucket_name, Key=name)
+                key = await self._full_key(name)
+                await s3.head_object(Bucket=self.settings.bucket_name, Key=key)
                 return True
             except s3.exceptions.ClientError as e:
                 if e.response["Error"]["Code"] == "404":
@@ -89,23 +97,26 @@ class S3Storage(Storage):
 
     async def url(self, name: str) -> str:
         """Return a URL of a file."""
-        return f"{self.settings.endpoint_url}/{self.settings.bucket_name}/{name}"
+        key = await self._full_key(name)
+        return f"{self.settings.endpoint_url}/{self.settings.bucket_name}/{key}"
 
     async def signed_url(self, name: str, expires_seconds: int = 3600) -> str:
         """Return a signed temporary URL."""
+        key = await self._full_key(name)
         async with self.session.client(**self.s3_client_kwargs) as s3:
             return await s3.generate_presigned_url(
                 ClientMethod="get_object",
-                Params={"Bucket": self.settings.bucket_name, "Key": name},
+                Params={"Bucket": self.settings.bucket_name, "Key": key},
                 ExpiresIn=expires_seconds,
             )
 
     async def size(self, name: str) -> int:
         """Return the size of the file in bytes."""
+        key = await self._full_key(name)
         async with self.session.client(**self.s3_client_kwargs) as s3:
             try:
                 response = await s3.head_object(
-                    Bucket=self.settings.bucket_name, Key=name
+                    Bucket=self.settings.bucket_name, Key=key
                 )
                 return response["ContentLength"]
             except s3.exceptions.ClientError as e:
