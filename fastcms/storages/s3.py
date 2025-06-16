@@ -5,7 +5,7 @@ from fastapi import UploadFile
 from pydantic import BaseModel, ConfigDict
 import mimetypes
 from fastcms.storages.base import Storage
-from fastcms.storages.exceptions import StorageFileNotExistError
+from fastcms.storages.exceptions import StorageFileNotExistError, StorageFileExistsError
 from io import BytesIO
 from posixpath import normpath
 from fastcms.utils.logging import get_logger
@@ -56,12 +56,17 @@ class S3Storage(Storage):
         full_key = normpath(f"{self.prefix}/{name}") if self.prefix else normpath(name)
         return full_key
 
-    async def save(self, name: str, content: bytes | UploadFile) -> str:
+    async def save(
+        self, name: str, content: bytes | UploadFile, overwrite: bool = False
+    ) -> str:
         """Save a file and return its name/path."""
         _extra_args = {"ACL": "public-read"} if self.public else {}
         content_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
         # strip leading slashes from name just in case
         full_key = await self._full_key(name)
+        if not overwrite and await self.exists(full_key):
+            logger.info(f"File '{name}' already exists, skipping upload.")
+            raise StorageFileExistsError(f"File '{name}' already exists.")
         # If content is an UploadFile, read its content
         if isinstance(content, UploadFile):
             body = content.file
