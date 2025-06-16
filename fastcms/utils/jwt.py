@@ -39,7 +39,7 @@ class JWTTokenPayload(BaseModel):
 
 
 class JWTAlgorithm(StrEnum):
-    HS256 = "hs256"
+    HS256 = "HS256"
 
     @classmethod
     def choices(cls):
@@ -54,14 +54,14 @@ class JWTHandler:
     def __init__(
         self,
         secret: str,
-        algorithm: JWTAlgorithm.HS256,
+        algorithm: JWTAlgorithm = JWTAlgorithm.HS256,
         access_token_expire_minutes: int = 30,  # 30 minutes
         refresh_token_expire_minutes: int = 60 * 24 * 7,  # 7 days
     ):
         # Validate algorithm
         if isinstance(algorithm, str):
             try:
-                algorithm = JWTAlgorithm(algorithm.lower())
+                algorithm = JWTAlgorithm(algorithm.capitalize())
             except ValueError:
                 raise UnsupportedJWTAlgorithmError(
                     f"Unsupported JWT algorithm: {algorithm}"
