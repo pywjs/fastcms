@@ -8,6 +8,10 @@ from fastcms.storages.base import Storage
 from fastcms.storages.exceptions import StorageFileNotExistError
 from io import BytesIO
 from posixpath import normpath
+from fastcms.utils.logging import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class S3Settings(BaseModel):
@@ -64,6 +68,9 @@ class S3Storage(Storage):
         elif isinstance(content, bytes):
             body = BytesIO(content)
         else:
+            logger.warning(
+                f"unknown content is passed to S3Storage.save: {type(content)}"
+            )
             raise ValueError("Content must be bytes or an UploadFile instance.")
         async with self.session.client(**self.s3_client_kwargs) as s3:
             await s3.upload_fileobj(
