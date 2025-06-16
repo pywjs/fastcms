@@ -8,7 +8,7 @@ class Storage(Protocol):
 
     name: str
 
-    async def save(self, name: str, content: bytes) -> str:
+    async def save(self, name: str, content: bytes, overwrite: bool = False) -> str:
         """Save a file and return its name/path."""
         ...
 
