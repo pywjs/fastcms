@@ -23,7 +23,9 @@ class LocalStorage(Storage):
     def _resolve_path(self, name: str | Path) -> Path:
         return self.base_path / name
 
-    async def save(self, name: str | Path, content: bytes) -> str:
+    async def save(
+        self, name: str | Path, content: bytes, overwrite: bool = False
+    ) -> str:
         """Save a file and return its name/path."""
         file_path = self._resolve_path(name)
         file_path.parent.mkdir(parents=True, exist_ok=True)
