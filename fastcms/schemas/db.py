@@ -1,6 +1,6 @@
 # fastcms/schemas/db.py
 
-from typing import Type, Any, TypeVar
+from typing import Type, Any, TypeVar, Union, get_origin
 from sqlmodel import SQLModel
 from pydantic import create_model
 
@@ -74,10 +74,14 @@ class BaseDBSchema:
                 continue
 
             annotation = self._overrides.get(field_name, field.annotation)
+            origin = get_origin(annotation)
             # handle default values (or optionals)
             if field.default is not None:
                 default = field.default
-            elif field.required is False:
+            elif origin is Union and type(None) in annotation.__args__:
+                # Optional[...] = Union[..., None]
+                default = None
+            elif field.is_required is False:
                 default = None
             else:
                 default = ...
