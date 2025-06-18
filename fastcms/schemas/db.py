@@ -74,7 +74,13 @@ class BaseDBSchema:
                 continue
 
             annotation = self._overrides.get(field_name, field.annotation)
-            default = field.default if field.default is not None else ...
+            # handle default values (or optionals)
+            if field.default is not None:
+                default = field.default
+            elif field.is_required is False:
+                default = None
+            else:
+                default = ...
 
             if (
                 hasattr(annotation, "__origin__") and annotation.__origin__ is list
