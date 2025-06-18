@@ -77,7 +77,7 @@ class BaseDBSchema:
             # handle default values (or optionals)
             if field.default is not None:
                 default = field.default
-            elif field.is_required is False:
+            elif field.required is False:
                 default = None
             else:
                 default = ...
