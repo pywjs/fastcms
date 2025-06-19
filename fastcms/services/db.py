@@ -2,6 +2,8 @@
 
 from enum import StrEnum
 from typing import TypeVar, Type, Generic, Any, Sequence
+
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import Select
 from sqlmodel import SQLModel, select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -64,6 +66,20 @@ class BaseDBService(Generic[T]):
             fields_dict[k] = v
         return parse_filters(self.model, fields_dict)
 
+    def _prefetch_clause(
+        self, stmt: Select, prefetch_fields: Sequence[str] | None = None
+    ) -> Select:
+        """Prefetch related models to avoid N+1 queries."""
+        if prefetch_fields is not None:
+            for rel in prefetch_fields:
+                if rel in self.model_relationships:
+                    stmt = stmt.options(selectinload(getattr(self.model, rel)))
+                else:
+                    raise ValueError(
+                        f"Invalid prefetch field '{rel}' for model '{self.model.__name__}'"
+                    )
+        return stmt
+
     async def filter(
         self, limit: int = 100, offset: int = 0, order_by: str | None = None, **kwargs
     ) -> Sequence[T]:
@@ -112,7 +128,9 @@ class BaseDBService(Generic[T]):
         """
         return await self.session.get(self.model, pk)
 
-    async def one(self, pk: str | None = None, **kwargs) -> T | None:
+    async def one(
+        self, pk: str | None = None, prefetch_fields: list[str] | None = None, **kwargs
+    ) -> T | None:
         """Retrieve a single instance by filters.
         If pk is provided, it will be used to filter the instance.
         Or can be more implicit such as `one(id=pk)` or `one(slug=slug)`.
@@ -120,12 +138,10 @@ class BaseDBService(Generic[T]):
         # TODO: when using `one`, it should raise an exception if more than one instance is found.
         filter_clause = self._filter_clause(**kwargs)
         if pk:
-            filter_clause = filter_clause & (self.model.id == pk)
+            filter_clause = filter_clause & (self.model.id == pk)  # noqa
         stmt: Select = select(self.model).where(filter_clause)
-
-        # Apply soft delete clause if applicable
-        soft_delete_clause = self._soft_delete_clause()
-        stmt = stmt.where(soft_delete_clause)
+        stmt = self._prefetch_clause(stmt, prefetch_fields)
+        stmt = stmt.where(self._soft_delete_clause())
 
         result = await self.session.exec(stmt)
         return result.one_or_none()

@@ -2,9 +2,9 @@
 
 from typing import Any
 
-from sqlmodel import SQLModel
 from sqlalchemy import and_, true
 from sqlalchemy.sql.elements import BinaryExpression, ClauseElement
+from sqlmodel import SQLModel
 
 OPERATORS = {
     "eq": lambda f, v: f == v,
