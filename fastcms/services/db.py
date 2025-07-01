@@ -81,7 +81,12 @@ class BaseDBService(Generic[T]):
         return stmt
 
     async def filter(
-        self, limit: int = 100, offset: int = 0, order_by: str | None = None, **kwargs
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        order_by: str | None = None,
+        prefetch_fields: list[str] | None = None,
+        **kwargs,
     ) -> Sequence[T]:
         """Filter instances based on provided filters, limit, offset, and order."""
 
@@ -91,8 +96,7 @@ class BaseDBService(Generic[T]):
             stmt = stmt.where(filter_clause)
 
         # Apply soft delete clause if applicable
-        soft_delete_clause = self._soft_delete_clause()
-        stmt = stmt.where(soft_delete_clause)
+        stmt = stmt.where(self._soft_delete_clause())
 
         # Apply ordering if specified
         if order_by:
@@ -104,6 +108,9 @@ class BaseDBService(Generic[T]):
 
         # Apply limit and offset
         stmt = stmt.limit(limit).offset(offset)
+        # Run the prefetch clause if prefetch_fields are provided
+        stmt = self._prefetch_clause(stmt, prefetch_fields)
+        # Execute the statement
         result = await self.session.exec(stmt)
         return result.all()
 
@@ -162,7 +169,9 @@ class BaseDBService(Generic[T]):
 
         return await self.one(slug=slug)
 
-    async def all(self, **kwargs) -> Sequence[T] | None:
+    async def all(
+        self, prefetch_fields: list[str] | None = None, **kwargs
+    ) -> Sequence[T] | None:
         """Retrieve all instances with optional filters."""
         filter_clause = self._filter_clause(**kwargs)
         stmt: Select = select(self.model).where(filter_clause)
@@ -170,6 +179,8 @@ class BaseDBService(Generic[T]):
         # Apply soft delete clause if applicable
         soft_delete_clause = self._soft_delete_clause()
         stmt = stmt.where(soft_delete_clause)
+
+        stmt = self._prefetch_clause(stmt, prefetch_fields)
 
         result = await self.session.exec(stmt)
         return result.all()
