@@ -256,15 +256,14 @@ class BaseDBService(Generic[T]):
         await self.session.refresh(instance)
         return instance
 
-    async def delete(self, instance: T) -> None:
-        """Delete an instance."""
-        if self.delete_mode == DeleteMode.SOFT:
+    async def delete(self, instance: T, force: bool = False) -> None:
+        """Delete an instance. If force=True, perform hard delete even if SOFT mode."""
+        if force or self.delete_mode == DeleteMode.HARD:
+            await self.session.delete(instance)
+        elif self.delete_mode == DeleteMode.SOFT:
             if hasattr(instance, "is_deleted"):
                 instance.is_deleted = True
             if hasattr(instance, "deleted_at"):
                 instance.deleted_at = current_time()
             self.session.add(instance)
-        else:
-            await self.session.delete(instance)
-
         await self.session.commit()
